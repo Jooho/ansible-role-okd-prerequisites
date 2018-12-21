@@ -1,0 +1,128 @@
+---
+
+- name: Install the required rpms
+  yum:
+    name:
+      - wget
+      - git 
+      - yum-utils
+      - net-tools
+      - bind-utils
+      - iptables-services
+      - bridge-utils
+      - bash-completion
+      - kexec-tools
+      - sos 
+      - psacct
+    state: present
+  become: yes
+  register: rpm_install
+  async: 1800
+  poll: 0
+
+- name: Wait for installing required rpms
+  async_status: jid="{{ rpm_install.ansible_job_id }}"
+  register: jobs
+  until: jobs.finished
+  retries: 180
+  delay: 10
+
+- name: Clone OKD Ansible Git Repo
+  git:
+      dest: ~/ # required. The path of where the repository should be checked out. This parameter is required, unless C(clone) is set to C(no).
+      repo: "https://github.com/openshift/openshift-ansible" # required. git, SSH, or HTTP(S) protocol address of the git repository.
+      force: no # not required. If C(yes), any modified files in the working repository will be discarded.  Prior to 0.7, this was always 'yes' and could not be disabled.  Prior to 1.9, the default was `yes`
+      clone: yes # not required. If C(no), do not clone the repository if it does not exist locally
+      update: yes # not required. If C(no), do not retrieve new revisions from the origin repository,Operations like archive will work on the existing (old) repository and might not respond to changes to the options version or remote.
+      remote: origin # not required. Name of the remote.
+      refspec: "release-{{ okd_version }}" # not required. Add an additional refspec to be fetched. If version is set to a I(SHA-1) not reachable from any branch or tag, this option may be necessary to specify the ref containing the I(SHA-1). Uses the same syntax as the 'git fetch' command. An example value could be "refs/meta/config".
+  become: yes
+
+- name: upgrade all packages
+  yum:
+    name: '*'
+    state: latest
+  become: yes
+  register: rpm_upgrade
+  async: 1800
+  poll: 0
+
+- name: Wait for upgrade OS
+  async_status: jid="{{ rpm_upgrade.ansible_job_id }}"
+  register: jobs
+  until: jobs.finished
+  retries: 180
+  delay: 30
+
+- name: Reboot VMs
+  reboot:
+    reboot_timeout: 300
+  become: yes
+ 
+- name: Install docker
+  yum:
+    name: "docker-{{ docker_version }}"
+    state: present
+    update_cache: yes
+  register: docker_install
+  become: yes
+
+- name: Configure docker-storage-setup configuration
+  copy:
+    content: |
+      STORAGE_DRIVER=overlay2
+      CONTAINER_ROOT_LV_NAME=dockerlv
+      CONTAINER_ROOT_LV_SIZE=100%FREE
+      CONTAINER_ROOT_LV_MOUNT_PATH=/var/lib/docker
+      DEVS=/dev/{{ docker_storage_disk }}
+      VG=docker-vg
+      EXTRA_STORAGE_OPTIONS="--storage-opt overlay2.size=3G"
+    dest: /etc/sysconfig/docker-storage-setup
+  become: yes
+  when: docker_install.changed
+
+- name: Run docker-storage-setup
+  command: docker-storage-setup
+  become: yes
+  when: docker_install.changed
+
+- name: Start and enable docker
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+  become: yes
+  when: docker_install.changed
+
+- import_tasks: ./config-dns.yaml
+  when: interim_dns_use|bool
+  
+- name: Start NetworkManager
+  service:
+    name: NetworkManager
+    state: restarted
+    enabled: true
+  become: yes
+
+- name: Determine if firewalld is installed
+  yum:
+    name: "firewalld"
+    state: present
+  become: yes
+  register: firewalld_installed
+
+- name: Stop firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: false
+  become: yes
+  when:
+  - firewalld_installed.installed_versions | default([]) | length > 0 
+
+- name: Start iptables
+  service:
+    name: iptables
+    state: started
+    enabled: true
+  become: yes

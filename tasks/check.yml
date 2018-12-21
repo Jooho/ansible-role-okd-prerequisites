@@ -1,0 +1,16 @@
+---
+
+- name: Check node_type
+  fail: 
+     msg: "node_type must be set and node_type shoulde be one of okd-host, okd-lb"
+  when:
+  - node_type is defined
+  - not node_type in [ 'okd-host', 'okd-lb']
+
+- name: Check params - interim_dns_ip
+  fail:
+     msg: "Insufficient params: interim_dns_ip"
+  when: 
+  - interim_dns_use|bool
+  - interim_dns_ip is undefined
+  

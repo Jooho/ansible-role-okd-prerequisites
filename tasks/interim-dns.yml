@@ -1,0 +1,22 @@
+---
+
+- name: Check if interim dns ip already set in /etc/resolv.conf
+  command: "grep {{ interim_dns_ip }} /etc/resolv.conf"
+  register: interim_dns_ip_exist
+  ignore_errors: yes
+
+- name: Add interim dns ip to all nodes
+  lineinfile:
+    path: /etc/sysconfig/network-scripts/ifcfg-eth0
+    line: "PEERDNS=no"
+  when: interim_dns_ip_exist is failed
+
+- name: Add interim dns ip to all nodes
+  lineinfile:
+    path: /etc/sysconfig/network-scripts/ifcfg-eth0
+    line: "DNS1={{ interim_dns_ip }}"
+  when: interim_dns_ip_exist is failed
+
+
+
+  

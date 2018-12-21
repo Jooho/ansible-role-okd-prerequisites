@@ -1,0 +1,12 @@
+---
+
+- name: Checking Logic
+  import_tasks: check.yml
+
+- name: Set up ocp host
+  import_tasks: ./okd-host.yaml
+  when: node_type == 'okd-host'
+
+- name: Set up okd lb host
+  import_tasks: okd-lb.yaml
+  when: node_type == 'okd-lb'

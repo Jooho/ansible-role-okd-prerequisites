@@ -1,0 +1,5 @@
+okd_version: '3.11'
+docker_version: '1.13.1'
+docker_storage_disk: vdb
+interim_dns_use: no
+#interim_dns_ip: 
