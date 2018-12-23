@@ -94,7 +94,7 @@
   become: yes
   when: docker_install.changed
 
-- import_tasks: ./interim-dns.yaml
+- import_tasks: ./interim-dns.yml
   when: interim_dns_use|bool
   
 - name: Start NetworkManager
