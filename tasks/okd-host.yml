@@ -22,6 +22,7 @@
 
 - name: Wait for installing required rpms
   async_status: jid="{{ rpm_install.ansible_job_id }}"
+  become: yes
   register: jobs
   until: jobs.finished
   retries: 180
@@ -29,7 +30,7 @@
 
 - name: Clone OKD Ansible Git Repo
   git:
-      dest: ~/ # required. The path of where the repository should be checked out. This parameter is required, unless C(clone) is set to C(no).
+      dest: ~/openshift-ansible # required. The path of where the repository should be checked out. This parameter is required, unless C(clone) is set to C(no).
       repo: "https://github.com/openshift/openshift-ansible" # required. git, SSH, or HTTP(S) protocol address of the git repository.
       force: no # not required. If C(yes), any modified files in the working repository will be discarded.  Prior to 0.7, this was always 'yes' and could not be disabled.  Prior to 1.9, the default was `yes`
       clone: yes # not required. If C(no), do not clone the repository if it does not exist locally
@@ -49,14 +50,14 @@
 
 - name: Wait for upgrade OS
   async_status: jid="{{ rpm_upgrade.ansible_job_id }}"
+  become: yes
   register: jobs
   until: jobs.finished
   retries: 180
-  delay: 30
+  delay: 10
 
 - name: Reboot VMs
-  reboot:
-    reboot_timeout: 300
+  reboot:    
   become: yes
  
 - name: Install docker
@@ -97,12 +98,13 @@
 - import_tasks: ./interim-dns.yml
   when: interim_dns_use|bool
   
-- name: Start NetworkManager
-  service:
-    name: NetworkManager
-    state: restarted
-    enabled: true
-  become: yes
+# for RHEL  
+# - name: Start NetworkManager
+#   service:
+#     name: NetworkManager
+#     state: restarted
+#     enabled: true
+#   become: yes
 
 - name: Determine if firewalld is installed
   yum:
