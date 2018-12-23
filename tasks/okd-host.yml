@@ -14,6 +14,7 @@
       - kexec-tools
       - sos 
       - psacct
+      - NetworkManager
     state: present
   become: yes
   register: rpm_install
@@ -28,16 +29,6 @@
   retries: 180
   delay: 10
 
-- name: Clone OKD Ansible Git Repo
-  git:
-      dest: ~/openshift-ansible # required. The path of where the repository should be checked out. This parameter is required, unless C(clone) is set to C(no).
-      repo: "https://github.com/openshift/openshift-ansible" # required. git, SSH, or HTTP(S) protocol address of the git repository.
-      force: no # not required. If C(yes), any modified files in the working repository will be discarded.  Prior to 0.7, this was always 'yes' and could not be disabled.  Prior to 1.9, the default was `yes`
-      clone: yes # not required. If C(no), do not clone the repository if it does not exist locally
-      update: yes # not required. If C(no), do not retrieve new revisions from the origin repository,Operations like archive will work on the existing (old) repository and might not respond to changes to the options version or remote.
-      remote: origin # not required. Name of the remote.
-      refspec: "release-{{ okd_version }}" # not required. Add an additional refspec to be fetched. If version is set to a I(SHA-1) not reachable from any branch or tag, this option may be necessary to specify the ref containing the I(SHA-1). Uses the same syntax as the 'git fetch' command. An example value could be "refs/meta/config".
-  become: yes
 
 - name: upgrade all packages
   yum:
@@ -98,13 +89,12 @@
 - import_tasks: ./interim-dns.yml
   when: interim_dns_use|bool
   
-# for RHEL  
-# - name: Start NetworkManager
-#   service:
-#     name: NetworkManager
-#     state: restarted
-#     enabled: true
-#   become: yes
+- name: Start NetworkManager
+  service:
+    name: NetworkManager
+    state: restarted
+    enabled: true
+  become: yes
 
 - name: Determine if firewalld is installed
   yum:
