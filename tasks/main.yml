@@ -4,9 +4,9 @@
   import_tasks: check.yml
 
 - name: Set up ocp host
-  import_tasks: ./okd-host.yaml
+  import_tasks: ./okd-host.yml
   when: node_type == 'okd-host'
 
 - name: Set up okd lb host
-  import_tasks: okd-lb.yaml
+  import_tasks: okd-lb.yml
   when: node_type == 'okd-lb'
