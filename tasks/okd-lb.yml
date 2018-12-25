@@ -1,26 +1,33 @@
 ---
 
+# - name: Install the required rpms
+#   yum:
+#     name:
+#       - wget
+#       - git 
+#       - yum-utils
+#       - net-tools
+#       - bind-utils
+#       - iptables-services
+#       - bridge-utils
+#       - bash-completion
+#       - kexec-tools
+#       - sos 
+#       - psacct
+#       - NetworkManager
+#     state: present
+#   become: yes
+#   register: rpm_install
+#   async: 1800
+#   poll: 0
+
 - name: Install the required rpms
-  yum:
-    name:
-      - wget
-      - git 
-      - yum-utils
-      - net-tools
-      - bind-utils
-      - iptables-services
-      - bridge-utils
-      - bash-completion
-      - kexec-tools
-      - sos 
-      - psacct
-      - NetworkManager
-    state: present
+  shell: yum install -y wget git yum-utils net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct python-passlib NetworkManager 
   become: yes
   register: rpm_install
   async: 1800
   poll: 0
-
+  
 - name: Wait for installing required rpms
   async_status: jid="{{ rpm_install.ansible_job_id }}"
   become: yes

@@ -1,22 +1,30 @@
 ---
 
+# - name: Install the required rpms
+#   yum:
+#     name:
+#       - wget
+#       - git 
+#       - yum-utils
+#       - net-tools
+#       - bind-utils
+#       - iptables-services
+#       - bridge-utils
+#       - bash-completion
+#       - kexec-tools
+#       - sos 
+#       - psacct
+#       - python-passlib
+#       - NetworkManager
+#     state: present
+#   become: yes
+#   register: rpm_install
+#   async: 1800
+#   poll: 0
+# https://github.com/ansible/ansible/issues/47210
+
 - name: Install the required rpms
-  yum:
-    name:
-      - wget
-      - git 
-      - yum-utils
-      - net-tools
-      - bind-utils
-      - iptables-services
-      - bridge-utils
-      - bash-completion
-      - kexec-tools
-      - sos 
-      - psacct
-      - python-passlib
-      - NetworkManager
-    state: present
+  shell: yum install -y wget git yum-utils net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct python-passlib NetworkManager 
   become: yes
   register: rpm_install
   async: 1800
